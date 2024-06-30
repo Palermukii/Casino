@@ -28,7 +28,7 @@ int jugarCrupier(const Cartas &cartas, int total, int asCount) {
   // Ajustar el valor del As si es necesario
   total = ajustarValorAs(total, asCount);
 
-  // Jugar del crupier según reglas estándar (debe alcanzar al menos 17)
+  // Jugar del crupier según reglas estandar (debe alcanzar al menos 17)
   while (total < 17) {
     int nueva_carta = rand() % 52;
     int valor = valorCarta(cartas.numero[nueva_carta]);
@@ -54,7 +54,7 @@ void jugarJugador(const Cartas &cartas, double &saldo) {
   double apuesta;
 
   cout << "Tu saldo actual es: $" << saldo << endl;
-  cout << "¿Cuánto quieres apostar? ";
+  cout << "¿Cuanto quieres apostar? ";
   cin >> apuesta;
 
   if (apuesta > saldo) {
@@ -82,6 +82,17 @@ void jugarJugador(const Cartas &cartas, double &saldo) {
   total_jugador = ajustarValorAs(total_jugador, asCount_jugador);
   cout << "Total: " << total_jugador << endl;
 
+  // Verificar si el jugador tiene un blackjack
+  if ((cartas.numero[carta1_jugador] == 1 &&
+       cartas.numero[carta2_jugador] > 10) ||
+      (cartas.numero[carta2_jugador] == 1 &&
+       cartas.numero[carta1_jugador] > 10)) {
+    cout << "¡Blackjack! Ganaste 1.5 veces tu apuesta." << endl;
+    saldo += 2.5 * apuesta;
+    cout << "Tu saldo actual es: $" << saldo << endl;
+    return;
+  }
+
   // Cartas del crupier
   int carta1_crupier = rand() % 52;
   int carta2_crupier = rand() % 52;
@@ -92,16 +103,15 @@ void jugarJugador(const Cartas &cartas, double &saldo) {
                         (cartas.numero[carta2_crupier] == 1);
 
   cout << "Cartas del crupier: " << cartas.nombre[carta1_crupier] << " de "
-       << cartas.simbolo[carta1_crupier] << " y "
-       << cartas.nombre[carta2_crupier] << " de "
-       << cartas.simbolo[carta2_crupier] << endl;
+       << cartas.simbolo[carta1_crupier] << " y una carta oculta" << endl;
 
-  // Mostrar total visible del crupier
-  cout << "Total visible del crupier: " << total_crupier << endl;
+  // Mostrar total visible del crupier (solo la primera carta)
+  int total_visible_crupier = valorCarta(cartas.numero[carta1_crupier]);
+  cout << "Total visible del crupier: " << total_visible_crupier << endl;
 
   char choice;
   do {
-    cout << "¿Quieres otra carta? (s/n): ";
+    cout << "Quieres otra carta? (s/n): ";
     cin >> choice;
 
     if (choice == 's') {
@@ -124,6 +134,12 @@ void jugarJugador(const Cartas &cartas, double &saldo) {
       }
     }
   } while (choice == 's');
+
+  // Una vez el jugador se planta, mostrar la carta oculta del crupier
+  cout << "La carta oculta del crupier es: " << cartas.nombre[carta2_crupier]
+       << " de " << cartas.simbolo[carta2_crupier] << endl;
+  total_crupier = ajustarValorAs(total_crupier, asCount_crupier);
+  cout << "Total del crupier: " << total_crupier << endl;
 
   // Una vez el jugador se planta, se determina el resultado comparando con el
   // crupier
@@ -151,16 +167,21 @@ int main() {
       {1,  2,  3,  4, 5,  6,  7,  8,  9, 10, 10, 10, 10, 1,  2,  3, 4, 5,
        6,  7,  8,  9, 10, 10, 10, 10, 1, 2,  3,  4,  5,  6,  7,  8, 9, 10,
        10, 10, 10, 1, 2,  3,  4,  5,  6, 7,  8,  9,  10, 10, 10, 10},
-      {"♠", "♠", "♠", "♠", "♠", "♠", "♠", "♠", "♠", "♠", "♠", "♠", "♠",
-       "♥", "♥", "♥", "♥", "♥", "♥", "♥", "♥", "♥", "♥", "♥", "♥", "♥",
-       "♣", "♣", "♣", "♣", "♣", "♣", "♣", "♣", "♣", "♣", "♣", "♣", "♣",
-       "♦", "♦", "♦", "♦", "♦", "♦", "♦", "♦", "♦", "♦", "♦", "♦", "♦"},
+      {"Pica", "Pica", "Pica", "Pica", "Pica", "Pica", "Pica", "Pica", "Pica", "Pica", "Pica", "Pica", "Pica",
+       "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones", "Corazones",
+       "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol", "Trebol",
+       "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante", "Diamante"},
       {"As", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
        "As", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
        "As", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
        "As", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}};
 
-  double saldo = 1000.0; // Saldo inicial del jugador
+  double saldo;
+
+  // Solicitar la cantidad de dinero con la que el jugador desea ingresar
+  cout << "Bienvenido al casino. ¿Con cuanto dinero deseas ingresar? $";
+  cin >> saldo;
+
   char jugarDeNuevo;
 
   do {
